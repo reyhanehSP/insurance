@@ -1,8 +1,24 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Bonyade-Koodak";
+  font-style: normal;
+  font-weight: 500;
+  src:
+    url("/assets/fonts/Bonyade-Koodak-FaNum/Webfonts/woff/BonyadeKoodakFaNum-Medium.woff")
+      format("woff"),
+    url("/assets/fonts/Bonyade-Koodak-FaNum/Webfonts/woff2/BonyadeKoodakFaNum-Medium.woff2")
+      format("woff2");
+}
+
 :root {
+    --font-family: "Bonyade-Koodak";
   --background: #ffffff;
   --foreground: #171717;
+}
+
+* {
+  font-family: var(--font-family);
 }
 
 @theme inline {
@@ -20,6 +36,7 @@
 }
 
 body {
+  direction: rtl;
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
