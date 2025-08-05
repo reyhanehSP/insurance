@@ -62,7 +62,7 @@ export default function InsuranceForm() {
 
 function SectionHeader({ title }: { title: string }) {
   return (
-    <h2 className="text-xl font-semibold border-r-4 border-blue-600 pr-3 mb-4 mt-6">
+    <h2 className="text-xl font-semibold border-r-4 dark:text-black border-blue-600 pr-3 mb-4 mt-6">
       {title}
     </h2>
   );
@@ -79,7 +79,7 @@ function Input({
 }) {
   return (
     <div className="flex flex-col">
-      <label className="mb-1 text-sm font-medium">{label}</label>
+      <label className="mb-1 text-sm font-medium dark:text-black">{label}</label>
       <input
         type={type}
         className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -91,7 +91,9 @@ function Input({
 function FileInput({ label }: { label: string }) {
   return (
     <div className="flex flex-col">
-      <label className="mb-1 text-sm font-medium">{label}</label>
+      <label className="mb-1 text-sm font-medium dark:text-black">
+        {label}
+      </label>
       <input
         type="file"
         className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
