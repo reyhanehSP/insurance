@@ -11,7 +11,7 @@ const useVoiceAssistance = () => {
   const audioChunks = useRef<Blob[]>([]);
   const audioContext = useRef<AudioContext | null>(null);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
-
+  const [result, setResult] = useState("");
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyser = useRef<AnalyserNode | null>(null);
   const dataArray = useRef<Uint8Array | null>(null);
@@ -19,11 +19,15 @@ const useVoiceAssistance = () => {
   const animationFrameId = useRef<number | null>(null);
   const [recordingTime, setRecordingTime] = useState<number>(60);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const urlAi = "https://api.metisai.ir/api/v1/chat/session";
+  const headersAi = {
+    "Content-Type": "application/json",
+    Authorization: "Bearer tpsg-fZjznCMESRkQnVIrylqg8zZA4QvUVWn",
+  };
+
   const [formData, setFormData] = useState({
     firstName: "",
     nationalCode: "",
-    payload: false,
-    message: "",
   });
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -163,7 +167,7 @@ const useVoiceAssistance = () => {
         const data = await res.json();
         setTranscript(data.text);
         if (data?.text) {
-          extractUserInfoFromText(data.text);
+          sendStructuredPromptToMetis(data.text);
         } else {
           setError("خطا در دریافت فایل صوتی");
         }
@@ -181,103 +185,62 @@ const useVoiceAssistance = () => {
     }
   };
   const sendStructuredPromptToMetis = async (text: string) => {
-    const messages = [
-      {
-        content: `
-        Respond only in JSON format. Extract and structure the input into these fields:
-        - 'firstName': the name of user.
-
-        All responses must be in Persian (Farsi).
-      `,
-        role: "sytem",
-      },
-      {
-        content: text,
-        role: "user",
-      },
-    ];
-
-    const payload = {
-      model: "gpt-4o",
-      messages: messages,
-      temperature: 1,
-      max_tokens: 4096,
-      top_p: 1,
-    };
-
+    if (!text.trim()) {
+      setResult("لطفا یک پیام وارد کنید.");
+      return;
+    }
     try {
-      const response = await fetch(
-        "https://api.metisai.ir/api/v1/chat/session",
-        {
-          method: "POST",
-          headers: {
-            Authorization: "Bearer tpsg-fZjznCMESRkQnVIrylqg8zZA4QvUVWn",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+      // 1️⃣ ساخت Session
+      const sessionRes = await fetch(urlAi, {
+        method: "POST",
+        headers: headersAi,
+        body: JSON.stringify({
+          botId: "c65e5439-0f1d-46c3-b8bf-75d286a9d3f8",
+          user: null,
+          initialMessages: null,
+        }),
+      });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("⛔ خطای سرور:", errorText);
-        throw new Error("پاسخ نامعتبر  ");
+      if (!sessionRes.ok) {
+        throw new Error("خطا در ایجاد سشن");
       }
+      const sessionData = await sessionRes.json();
+      const sessionId = sessionData.id;
 
-      const data = await response.json();
+      const chatUrl = `https://api.metisai.ir/api/v1/chat/session/${sessionId}/message`;
+      const chatRes = await fetch(chatUrl, {
+        method: "POST",
+        headers: headersAi,
+        body: JSON.stringify({
+          message: {
+            content: text,
+            type: "USER",
+          },
+        }),
+      });
 
-      const result = data?.choices?.[0]?.message?.content;
-      console.log("✅ پاسخ :", result);
 
-      return result;
+      if (!chatRes.ok) {
+        throw new Error("خطا در ارسال پیام به ربات");
+      }
+      setLoading(true)
+      const chatData = await chatRes.json();
+      if (chatData.id !== "") {
+        setLoading(false);
+        const cleaned = chatData.content.replace(/```json|```/g, "").trim();
+        console.log(cleaned);
+        const parsed = JSON.parse(cleaned);
+        console.log(parsed);
+        setFormData(parsed);
+        setResult(JSON.stringify(chatData, null, 2));
+      }
+      
     } catch (err: any) {
-      console.error("❌ خطا:", err.message);
-      throw err;
+      setResult("❌ خطا: " + err.message);
+    } finally {
+      setLoading(false);
     }
   };
-  const extractUserInfoFromText = (
-    text: string
-  ) => {
-    const result = {
-      firstName: "",
-      lastName: "",
-      nationalCode: "",
-      payload: false,
-      message: "",
-    };
-
-   
-    const nationalCodeMatch = text.match(/\b\d{10}\b/);
-    if (nationalCodeMatch) {
-      result.nationalCode = nationalCodeMatch[0];
-    }
-
-    const nameMatch =
-      text.match(/من\s+([آ-ی]+)\s+([آ-ی]+)\s+هستم/) ||
-      text.match(/اسم\s+من\s+([آ-ی]+)\s+([آ-ی]+)\s+است/) ||
-      text.match(/من\s+([آ-ی]+)\s+([آ-ی]+)\s+ام/);
-
-    if (nameMatch) {
-      result.firstName = nameMatch[1];
-      result.lastName = nameMatch[2];
-
-      setFormData((prev: any) => ({
-        ...prev,
-        firstName: result.firstName,
-        lastName: result.lastName,
-        nationalCode: result.nationalCode || prev.nationalCode,
-      }));
-    }
-
-    if (result.firstName && result.nationalCode) {
-      result.payload = true;
-    } else {
-      result.message = "نام یا کد ملی به درستی تشخیص داده نشد.";
-    }
-
-    return result;
-  };
-
   return {
     startRecording,
     isRecording,
@@ -293,7 +256,5 @@ const useVoiceAssistance = () => {
     setTranscript,
   };
 };
-
-
 
 export default useVoiceAssistance;

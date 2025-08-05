@@ -5,16 +5,22 @@ import VoiceToTextWithApi from "./vioceToText";
 import useVoiceAssistance from "./useVoiceAssistant";
 
 export default function InsuranceForm() {
-  const { formData } = useVoiceAssistance();
+  const { formData, loading } = useVoiceAssistance();
+  console.log(formData)
   return (
     <div className="max-w-4xl mx-auto border border-gray-400 p-6 bg-white shadow-lg rounded-2xl my-5">
-      <h1 className="text-2xl font-bold mb-6 text-center text-blue-950">فرم درخواست بیمه</h1>
+      <h1 className="text-2xl font-bold mb-6 text-center text-blue-950">
+        فرم درخواست بیمه
+      </h1>
       <VoiceToTextWithApi />
       <SectionHeader title="اطلاعات شخصی" />
+      <p className={`${loading ? "text-red-500" : "text-black"} `}>
+        {loading ? "در حال دریافت اطلاعات" : ""}
+      </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <Input label="نام" value={formData.firstName} />
         <Input label="نام خانوادگی" />
-        <Input label="کد ملی" />
+        <Input label="کد ملی" value={formData.nationalCode} />
         <Input label="تاریخ تولد" type="date" />
         <Input label="شماره تماس" />
         <Input label="ایمیل" />
@@ -79,24 +85,31 @@ function Input({
 }) {
   return (
     <div className="flex flex-col">
-      <label className="mb-1 text-sm font-medium dark:text-black">{label}</label>
+      <label className="mb-1 text-sm font-medium dark:text-black">
+        {label}
+      </label>
       <input
+        value={value}
+        onChange={(e) => e.target.value}
         type={type}
-        className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="border border-gray-300 text-black rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
     </div>
   );
 }
 
-function FileInput({ label }: { label: string }) {
+function FileInput({ label , value }: { label: string; value?: string
+}) {
   return (
     <div className="flex flex-col">
       <label className="mb-1 text-sm font-medium dark:text-black">
         {label}
       </label>
       <input
+        value={value}
+        onChange={(e) => e.target.value}
         type="file"
-        className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="border border-gray-300 text-black rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
     </div>
   );

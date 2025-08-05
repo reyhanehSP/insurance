@@ -20,7 +20,7 @@ export default function VantaWavesBackground() {
         minWidth: 200.0,
         scale: 1.0,
         scaleMobile: 1.0,
-        waveSpeed : .5,
+        waveSpeed : 1,
         color: 0x5087,
       });
     }
