@@ -18,8 +18,9 @@ const VoiceToTextWithApi = () => {
     setAudioURL,
     setError,
     setTranscript,
+    formData,
   } = useVoiceAssistance();
-
+  console.log(formData);
   return (
     <div className="p-4 rounded-xl border border-gray-400 shadow w-full  mx-auto mt-8">
       <h3 className="text-lg mb-4 text-center text-blue-950">

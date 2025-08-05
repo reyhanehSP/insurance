@@ -188,7 +188,6 @@ const useVoiceAssistance = () => {
   const sendTextToMetisMutation = useMutation({
     mutationFn: sendTextToMetis,
     onSuccess: ({ parsed, raw }) => {
-      console.log(parsed);
       setFormData(parsed);
       setResult(JSON.stringify(raw, null, 2));
     },
@@ -196,6 +195,7 @@ const useVoiceAssistance = () => {
       setResult("❌ خطا: " + err.message);
     },
   });
+
   return {
     startRecording,
     isRecording,
