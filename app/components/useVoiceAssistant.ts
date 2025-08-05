@@ -23,10 +23,6 @@ const useVoiceAssistance = () => {
   const [recordingTime, setRecordingTime] = useState<number>(60);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const urlAi = "https://api.metisai.ir/api/v1/chat/session";
-  const headersAi = {
-    "Content-Type": "application/json",
-    Authorization: "Bearer tpsg-fZjznCMESRkQnVIrylqg8zZA4QvUVWn",
-  };
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -190,6 +186,7 @@ const useVoiceAssistance = () => {
     onSuccess: ({ parsed, raw }) => {
       setFormData(parsed);
       setResult(JSON.stringify(raw, null, 2));
+       setLoading(false);
     },
     onError: (err: any) => {
       setResult("❌ خطا: " + err.message);
@@ -209,6 +206,7 @@ const useVoiceAssistance = () => {
     setError,
     formData,
     setTranscript,
+    setFormData
   };
 };
 

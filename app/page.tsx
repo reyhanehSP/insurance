@@ -1,8 +1,7 @@
 "use client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import InsuranceForm from "./components/insurance";
-import EmploymentForm from "./components/employmentForm";
 import VantaWavesBackground from "./components/vanta";
+import VoiceToTextWithApi from "./components/vioceToText";
 
 export default function Home() {
   const queryClient = new QueryClient({
@@ -17,7 +16,7 @@ export default function Home() {
     <QueryClientProvider client={queryClient}>
       <VantaWavesBackground />
       <main className="relative z-10 ">
-        <InsuranceForm />
+        <VoiceToTextWithApi />
       </main>
     </QueryClientProvider>
   );
