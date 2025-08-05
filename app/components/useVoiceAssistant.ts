@@ -1,5 +1,8 @@
 "use client";
+import { useMutation } from "@tanstack/react-query";
 import React, { useState, useRef, useEffect } from "react";
+import { transcribeAudio } from "./api";
+import { sendTextToMetis } from "./metis";
 
 const useVoiceAssistance = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -136,9 +139,26 @@ const useVoiceAssistance = () => {
 
     return new Blob([buffer], { type: "audio/wav" });
   };
+  const transMutation = useMutation({
+    mutationFn: transcribeAudio,
+    onSuccess: (data) => {
+      if (data?.text) {
+        setTranscript(data.text);
+        sendTextToMetisMutation.mutate(data.text);
+      } else {
+        setError("خطا در دریافت فایل صوتی");
+        setLoading(false);
+      }
+    },
+    onError: (err: any) => {
+      setError(err?.message || "خطا در تبدیل صدا به متن");
+      setLoading(false);
+    },
+  });
   const stopRecording = () => {
     if (!mediaRecorder.current) {
       setError("ضبط شروع نشده بود");
+      setLoading(false);
       return;
     }
     setIsRecording(false);
@@ -154,28 +174,9 @@ const useVoiceAssistance = () => {
       const formData = new FormData();
       const wavBlob = await convertToWav(audioBlob);
 
-      formData.append("file", wavBlob, "./assets/recording.wav");
-      try {
-        const res = await fetch(
-          "https://api.alobegoo.com/ai-noauth/transcribe",
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
-        if (!res.ok) throw new Error(`خطا در ارسال به سرور: ${res.statusText}`);
-        const data = await res.json();
-        setTranscript(data.text);
-        if (data?.text) {
-          sendStructuredPromptToMetis(data.text);
-        } else {
-          setError("خطا در دریافت فایل صوتی");
-        }
-      } catch (err: any) {
-        setError(err.message || "خطا در تبدیل صدا به متن");
-      } finally {
-        setLoading(false);
-      }
+      formData.append("file", wavBlob, "recording.wav");
+
+      transMutation.mutate(formData);
     };
 
     mediaRecorder.current.stop();
@@ -184,63 +185,17 @@ const useVoiceAssistance = () => {
       clearInterval(timerRef.current);
     }
   };
-  const sendStructuredPromptToMetis = async (text: string) => {
-    if (!text.trim()) {
-      setResult("لطفا یک پیام وارد کنید.");
-      return;
-    }
-    try {
-      // 1️⃣ ساخت Session
-      const sessionRes = await fetch(urlAi, {
-        method: "POST",
-        headers: headersAi,
-        body: JSON.stringify({
-          botId: "c65e5439-0f1d-46c3-b8bf-75d286a9d3f8",
-          user: null,
-          initialMessages: null,
-        }),
-      });
-
-      if (!sessionRes.ok) {
-        throw new Error("خطا در ایجاد سشن");
-      }
-      const sessionData = await sessionRes.json();
-      const sessionId = sessionData.id;
-
-      const chatUrl = `https://api.metisai.ir/api/v1/chat/session/${sessionId}/message`;
-      const chatRes = await fetch(chatUrl, {
-        method: "POST",
-        headers: headersAi,
-        body: JSON.stringify({
-          message: {
-            content: text,
-            type: "USER",
-          },
-        }),
-      });
-
-
-      if (!chatRes.ok) {
-        throw new Error("خطا در ارسال پیام به ربات");
-      }
-      setLoading(true)
-      const chatData = await chatRes.json();
-      if (chatData.id !== "") {
-        setLoading(false);
-        const cleaned = chatData.content.replace(/```json|```/g, "").trim();
-        console.log(cleaned);
-        const parsed = JSON.parse(cleaned);
-        console.log(parsed);
-        setFormData(parsed);
-        setResult(JSON.stringify(chatData, null, 2));
-      }
-      
-    } catch (err: any) {
+  const sendTextToMetisMutation = useMutation({
+    mutationFn: sendTextToMetis,
+    onSuccess: ({ parsed, raw }) => {
+      console.log(parsed);
+      setFormData(parsed);
+      setResult(JSON.stringify(raw, null, 2));
+    },
+    onError: (err: any) => {
       setResult("❌ خطا: " + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+  });
   return {
     startRecording,
     isRecording,
